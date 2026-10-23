@@ -1,0 +1,6 @@
+numpy
+pyvista
+trimesh
+matplotlib
+SimpleITK
+PySide6

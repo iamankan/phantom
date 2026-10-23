@@ -1,0 +1,13 @@
+ObjectType = Image
+NDims = 3
+BinaryData = True
+BinaryDataByteOrderMSB = False
+CompressedData = False
+TransformMatrix = 1 0 0 0 1 0 0 0 1
+Offset = -1.160734579880992 -1.3020231026936282 -6
+CenterOfRotation = 0 0 0
+AnatomicalOrientation = RAI
+ElementSpacing = 0.0086024485996033066 0.0076065594630953595 0.080000000000000002
+DimSize = 300 300 150
+ElementType = MET_FLOAT
+ElementDataFile = papyrus_phantom.raw

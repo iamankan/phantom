@@ -1,0 +1,10 @@
+{
+    "turns": 1.0,
+    "sheet_thickness_px": 1,
+    "voxel_dimensions": [
+        150,
+        300,
+        300
+    ],
+    "formula": "R = 0.5 + 0.9 * sqrt(Theta / (2 * pi))"
+}
