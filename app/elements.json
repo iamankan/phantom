@@ -1,0 +1,37 @@
+{
+    "Carbon Ink": {
+        "z_value": 6.0,
+        "color": "#111111",
+        "code": 2.0
+    },
+    "Iron-Gall Ink": {
+        "z_value": 26.0,
+        "color": "#5c2c16",
+        "code": 3.0
+    },
+    "Copper Pigment": {
+        "z_value": 29.0,
+        "color": "#1b4d3e",
+        "code": 4.0
+    },
+    "Gold Leaf / Ink": {
+        "z_value": 79.0,
+        "color": "#d4af37",
+        "code": 5.0
+    },
+    "Silver Ink": {
+        "z_value": 47.0,
+        "color": "#9ca3af",
+        "code": 6.0
+    },
+    "Platinum Ink": {
+        "z_value": 78.0,
+        "color": "#cbd5e1",
+        "code": 7.0
+    },
+    "Lead White": {
+        "z_value": 82.0,
+        "color": "#64748b",
+        "code": 8.0
+    }
+}

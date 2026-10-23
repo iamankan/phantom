@@ -17,3 +17,12 @@ To view that phantom:
 python3 view_phantom.py --input papyrus_phantom
 ```
 ![Phantom Viewer](./media/phantom_viewer.jpg)
+
+Phantom Studio Pro:
+GUI:
+![Phantom Studio Pro](./media/phantom_studio_pro.png)
+
+Output View:
+![Phantom Studio Pro Output](./media/app_output.png)
+
+
