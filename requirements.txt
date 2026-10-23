@@ -4,3 +4,4 @@ trimesh
 matplotlib
 SimpleITK
 PySide6
+pyvistaqt
