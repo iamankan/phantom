@@ -1,17 +1,18 @@
 import os
 import sys
 import json
+import time
 import numpy as np
 import pyvista as pv
 import SimpleITK as sitk
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QComboBox, QSlider, QGroupBox, QFileDialog, QMessageBox
+    QLabel, QPushButton, QComboBox, QSlider, QGroupBox, QFileDialog, QMessageBox, QInputDialog
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPainter, QColor
+from PySide6.QtGui import QPainter, QColor, QImage
 
-# Comprehensive default elements library loaded on startup
+# Streamlined default elements library (Carbon & Iron-Gall only)
 DEFAULT_ELEMENTS = {
     "Carbon Ink": {
         "z_value": 6.0,
@@ -22,31 +23,6 @@ DEFAULT_ELEMENTS = {
         "z_value": 26.0,
         "color": "#5c2c16",
         "code": 3.0
-    },
-    "Copper Pigment": {
-        "z_value": 29.0,
-        "color": "#1b4d3e",
-        "code": 4.0
-    },
-    "Gold Leaf / Ink": {
-        "z_value": 79.0,
-        "color": "#d4af37",
-        "code": 5.0
-    },
-    "Silver Ink": {
-        "z_value": 47.0,
-        "color": "#9ca3af",
-        "code": 6.0
-    },
-    "Platinum Ink": {
-        "z_value": 78.0,
-        "color": "#cbd5e1",
-        "code": 7.0
-    },
-    "Lead White": {
-        "z_value": 82.0,
-        "color": "#64748b",
-        "code": 8.0
     }
 }
 
@@ -248,8 +224,22 @@ class PhantomStudioProWindow(QMainWindow):
         if not file_path:
             return
 
+        # Prompt user for mesh topology choice (Quad vs Triangulated)
+        mesh_types = ["Quad Mesh (Quads)", "Triangulated Mesh (Triangles)"]
+        mesh_choice, ok = QInputDialog.getItem(
+            self, 
+            "OBJ Mesh Topology", 
+            "Choose export mesh format:", 
+            mesh_types, 
+            0, 
+            False
+        )
+        if not ok:
+            return
+        is_triangulated = ("Triangulated" in mesh_choice)
+
         file_path = os.path.abspath(file_path)
-        directory = os.path.dirname(file_path)
+        parent_dir = os.path.dirname(file_path)
         base_name = os.path.basename(file_path)
         
         if base_name.endswith(".mhd"):
@@ -257,10 +247,21 @@ class PhantomStudioProWindow(QMainWindow):
         elif "." in base_name:
             base_name = base_name.rsplit(".", 1)[0]
 
-        mhd_path = os.path.join(directory, f"{base_name}.mhd")
-        json_path = os.path.join(directory, f"{base_name}_metadata.json")
-        texture_path = os.path.join(directory, f"{base_name}_unwrapped_texture.npy")
-        zmap_path = os.path.join(directory, f"{base_name}_elemental_zmap.npy")
+        # --- CREATE UNIQUE UTC TIMESTAMP FOLDER ---
+        utc_sec = int(time.time())
+        export_folder_name = f"{base_name}_utc{utc_sec}"
+        export_dir = os.path.join(parent_dir, export_folder_name)
+        os.makedirs(export_dir, exist_ok=True)
+
+        mhd_path = os.path.join(export_dir, f"{base_name}.mhd")
+        json_path = os.path.join(export_dir, f"{base_name}_metadata.json")
+        texture_path = os.path.join(export_dir, f"{base_name}_unwrapped_texture.npy")
+        zmap_path = os.path.join(export_dir, f"{base_name}_elemental_zmap.npy")
+        
+        obj_path = os.path.join(export_dir, f"{base_name}.obj")
+        mtl_path = os.path.join(export_dir, f"{base_name}.mtl")
+        mtl_filename = f"{base_name}.mtl"
+        png_texture_path = os.path.join(export_dir, f"{base_name}_unwrapped_texture.png")
 
         try:
             sheet_thickness_px = 6
@@ -349,12 +350,14 @@ class PhantomStudioProWindow(QMainWindow):
                 "generated_by": "phantom_studio_pro",
                 "studio_name": "Phantom Studio Pro",
                 "custom_base_name": base_name,
+                "utc_timestamp_sec": utc_sec,
                 "turns": turns,
                 "sheet_thickness_px": sheet_thickness_px,
                 "voxel_dimensions": list(voxel_dims),
                 "formula": "R = 0.5 + 0.9 * sqrt(Theta / (2 * pi))",
                 "substrate": self.sub_combo.currentText(),
-                "loaded_elements_config": self.elements_config
+                "loaded_elements_config": self.elements_config,
+                "mesh_topology": "Triangles" if is_triangulated else "Quads"
             }
             with open(json_path, "w") as f:
                 json.dump(metadata, f, indent=4)
@@ -362,14 +365,70 @@ class PhantomStudioProWindow(QMainWindow):
             np.save(texture_path, texture_display_matrix)
             np.save(zmap_path, zmap_matrix)
 
+            # --- EXPORT PNG TEXTURE FOR MTL MAPPING ---
+            img = QImage(grid_theta, grid_z, QImage.Format_RGB32)
+            code_to_qcolor = {cfg["code"]: QColor(cfg["color"]) for cfg in self.elements_config.values()}
+            default_sub_color = QColor("#f4ecd8")
+            
+            for z in range(grid_z):
+                for t in range(grid_theta):
+                    val = self.canvas.canvas_matrix[z, t]
+                    if val > 1.0 and val in code_to_qcolor:
+                        img.setPixelColor(t, z, code_to_qcolor[val])
+                    else:
+                        img.setPixelColor(t, z, default_sub_color)
+            img.save(png_texture_path)
+
+            # --- EXPORT WAVEFRONT OBJ & MTL ---
+            X_outer = X_vol[:, :, -1]
+            Y_outer = Y_vol[:, :, -1]
+            Z_outer = Z_vol[:, :, -1]
+
+            with open(mtl_path, "w") as f_mtl:
+                f_mtl.write("# Phantom Studio Pro Material File\n")
+                f_mtl.write("newmtl ScrollMaterial\n")
+                f_mtl.write("Kd 1.0 1.0 1.0\n")
+                f_mtl.write(f"map_Kd {base_name}_unwrapped_texture.png\n")
+
+            with open(obj_path, "w") as f_obj:
+                f_obj.write(f"mtllib {mtl_filename}\n")
+                f_obj.write("usematerial ScrollMaterial\n")
+                
+                # 1. Vertices (v)
+                for z_idx in range(grid_z):
+                    for t_idx in range(grid_theta):
+                        f_obj.write(f"v {X_outer[z_idx, t_idx]:.6f} {Y_outer[z_idx, t_idx]:.6f} {Z_outer[z_idx, t_idx]:.6f}\n")
+                        
+                # 2. UV Coordinates (vt)
+                for z_idx in range(grid_z):
+                    v_coord = 1.0 - (z_idx / (grid_z - 1))
+                    for t_idx in range(grid_theta):
+                        u_coord = t_idx / (grid_theta - 1)
+                        f_obj.write(f"vt {u_coord:.6f} {v_coord:.6f}\n")
+                        
+                # 3. Faces (Quads or Triangles)
+                for z_idx in range(grid_z - 1):
+                    for t_idx in range(grid_theta - 1):
+                        p0 = z_idx * grid_theta + t_idx + 1
+                        p1 = z_idx * grid_theta + (t_idx + 1) + 1
+                        p2 = (z_idx + 1) * grid_theta + (t_idx + 1) + 1
+                        p3 = (z_idx + 1) * grid_theta + t_idx + 1
+                        
+                        if is_triangulated:
+                            f_obj.write(f"f {p0}/{p0} {p1}/{p1} {p2}/{p2}\n")
+                            f_obj.write(f"f {p0}/{p0} {p2}/{p2} {p3}/{p3}\n")
+                        else:
+                            f_obj.write(f"f {p0}/{p0} {p1}/{p1} {p2}/{p2} {p3}/{p3}\n")
+
             msg_box = QMessageBox(self)
             msg_box.setWindowTitle("Success!")
             msg_box.setText(
-                f"Phantom Studio Pro exported successfully!\n\n"
+                f"Phantom Studio Pro exported to unique folder:\n[{export_folder_name}]\n\n"
                 f"• {base_name}.mhd (+ .raw)\n"
-                f"• {base_name}_metadata.json\n"
-                f"• {base_name}_unwrapped_texture.npy\n"
-                f"• {base_name}_elemental_zmap.npy (Ink Z-values only)"
+                f"• {base_name}.obj ({mesh_choice}) & .mtl\n"
+                f"• {base_name}_unwrapped_texture.png (.npy)\n"
+                f"• {base_name}_elemental_zmap.npy\n"
+                f"• {base_name}_metadata.json"
             )
             btn_view = msg_box.addButton("View Rolled Artifact in 3D", QMessageBox.AcceptRole)
             btn_ok = msg_box.addButton(QMessageBox.Ok)

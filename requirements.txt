@@ -5,3 +5,10 @@ matplotlib
 SimpleITK
 PySide6
 pyvistaqt
+scipy
+torch
+torchvision
+torchaudio
+scikit-image
+pyconrad
+itk-rtk
