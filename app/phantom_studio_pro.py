@@ -7,7 +7,7 @@ import pyvista as pv
 import SimpleITK as sitk
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QComboBox, QSlider, QGroupBox, QFileDialog, QMessageBox, QInputDialog
+    QLabel, QPushButton, QComboBox, QSlider, QGroupBox, QFileDialog, QMessageBox, QInputDialog, QScrollArea
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPainter, QColor, QImage
@@ -27,18 +27,39 @@ DEFAULT_ELEMENTS = {
 }
 
 class DrawingCanvas(QWidget):
-    def __init__(self, parent_window, grid_z=120, grid_theta=400):
+    def __init__(self, parent_window, grid_z=400, turns=4.0):
         super().__init__()
         self.grid_z = grid_z
-        self.grid_theta = grid_theta
         self.parent_window = parent_window
+        
+        # Dynamically compute grid_theta based on true physical unrolled aspect ratio
+        self.update_dimensions_for_turns(turns)
         
         # Initialize with substrate background (1.0)
         self.canvas_matrix = np.ones((self.grid_z, self.grid_theta), dtype=np.float32)
         self.active_code = 2.0  # Default to first ink
+        self.last_pos = None
         
-        self.setFixedSize(600, 180)
         self.setCursor(Qt.CrossCursor)
+
+    def update_dimensions_for_turns(self, turns):
+        length_units = 2 * np.pi * (0.5 * turns + 0.6 * (turns ** 1.5))
+        height_units = 12.0
+        aspect_ratio = length_units / height_units
+        
+        self.grid_theta = int(self.grid_z * aspect_ratio)
+        
+        display_h = 300
+        display_w = int(display_h * aspect_ratio)
+        self.setFixedSize(max(300, display_w), display_h)
+        
+        if hasattr(self, 'canvas_matrix') and self.canvas_matrix is not None:
+            old_z, old_t = self.canvas_matrix.shape
+            if old_t != self.grid_theta:
+                from scipy.ndimage import zoom
+                zoom_factor = (1.0, self.grid_theta / old_t)
+                self.canvas_matrix = zoom(self.canvas_matrix, zoom_factor, order=0)
+                self.canvas_matrix = np.clip(self.canvas_matrix, 1.0, max([cfg["code"] for cfg in self.parent_window.elements_config.values()] + [2.0]))
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -61,27 +82,52 @@ class DrawingCanvas(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.draw_at(event.position().toPoint())
+            pos = event.position().toPoint()
+            self.last_pos = pos
+            self.draw_at(pos)
 
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
-            self.draw_at(event.position().toPoint())
+            pos = event.position().toPoint()
+            if self.last_pos is not None:
+                self.draw_line(self.last_pos, pos)
+            else:
+                self.draw_at(pos)
+            self.last_pos = pos
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.last_pos = None
+
+    def draw_line(self, p1, p2):
+        cell_w = self.width() / self.grid_theta
+        cell_h = self.height() / self.grid_z
+        
+        t1, z1 = int(p1.x() / cell_w), int(p1.y() / cell_h)
+        t2, z2 = int(p2.x() / cell_w), int(p2.y() / cell_h)
+        
+        steps = max(abs(t2 - t1), abs(z2 - z1), 1)
+        for i in range(steps + 1):
+            t = int(t1 + (t2 - t1) * i / steps)
+            z = int(z1 + (z2 - z1) * i / steps)
+            self.paint_brush(z, t)
+        self.update()
 
     def draw_at(self, pos):
         cell_w = self.width() / self.grid_theta
         cell_h = self.height() / self.grid_z
-        
         t_idx = int(pos.x() / cell_w)
         z_idx = int(pos.y() / cell_h)
-        
-        brush_size = 4
+        self.paint_brush(z_idx, t_idx)
+        self.update()
+
+    def paint_brush(self, z_idx, t_idx):
+        brush_size = max(2, int(self.grid_z / 60))
         for dz in range(-brush_size, brush_size + 1):
             for dt in range(-brush_size, brush_size + 1):
                 nz, nt = z_idx + dz, t_idx + dt
                 if 0 <= nz < self.grid_z and 0 <= nt < self.grid_theta:
                     self.canvas_matrix[nz, nt] = 1.0 if self.active_code == 1.0 else self.active_code
-                    
-        self.update()
 
     def clear(self):
         self.canvas_matrix.fill(1.0)
@@ -92,11 +138,10 @@ class PhantomStudioProWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Phantom Studio Pro: Advanced Elemental Scroll Synthesizer")
-        self.resize(780, 580)
+        self.resize(900, 700)
 
-        # 1. Initialize configuration and canvas reference FIRST
         self.elements_config = DEFAULT_ELEMENTS.copy()
-        self.canvas = DrawingCanvas(self)
+        self.canvas = DrawingCanvas(self, grid_z=400, turns=4.0)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -106,7 +151,6 @@ class PhantomStudioProWindow(QMainWindow):
         controls_group = QGroupBox("Configuration & Elemental Palette")
         controls_layout = QHBoxLayout(controls_group)
 
-        # Substrate selector
         sub_layout = QVBoxLayout()
         sub_layout.addWidget(QLabel("Substrate:"))
         self.sub_combo = QComboBox()
@@ -114,7 +158,6 @@ class PhantomStudioProWindow(QMainWindow):
         sub_layout.addWidget(self.sub_combo)
         controls_layout.addLayout(sub_layout)
 
-        # Dropdown for active element tool selection + Load JSON button
         tool_layout = QVBoxLayout()
         tool_layout.addWidget(QLabel("Active Elemental Tool:"))
         
@@ -132,12 +175,11 @@ class PhantomStudioProWindow(QMainWindow):
         tool_layout.addLayout(tool_select_layout)
         controls_layout.addLayout(tool_layout)
 
-        # Turns slider
         turns_layout = QVBoxLayout()
         self.turns_label = QLabel("Scroll Turns: 4.0")
         turns_layout.addWidget(self.turns_label)
         self.turns_slider = QSlider(Qt.Horizontal)
-        self.turns_slider.setRange(2, 12)  # represents 1.0 to 6.0 (step 0.5)
+        self.turns_slider.setRange(2, 12)
         self.turns_slider.setValue(8)
         self.turns_slider.valueChanged.connect(self.update_turns_label)
         turns_layout.addWidget(self.turns_slider)
@@ -146,9 +188,15 @@ class PhantomStudioProWindow(QMainWindow):
         main_layout.addWidget(controls_group)
 
         # --- CANVAS GROUP ---
-        canvas_group = QGroupBox("Unrolled Writing Canvas (Click & Drag)")
+        canvas_group = QGroupBox("Unrolled Writing Canvas (Proportional Aspect Ratio)")
         canvas_layout = QVBoxLayout(canvas_group)
-        canvas_layout.addWidget(self.canvas, alignment=Qt.AlignCenter)
+        
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidget(self.canvas)
+        self.scroll_area.setWidgetResizable(False)
+        self.scroll_area.setAlignment(Qt.AlignCenter)
+        canvas_layout.addWidget(self.scroll_area)
+        
         main_layout.addWidget(canvas_group)
 
         # --- ACTIONS ---
@@ -208,6 +256,8 @@ class PhantomStudioProWindow(QMainWindow):
     def update_turns_label(self, value):
         turns = value / 2.0
         self.turns_label.setText(f"Scroll Turns: {turns:.1f}")
+        self.canvas.update_dimensions_for_turns(turns)
+        self.canvas.update()
 
     def generate_and_save(self):
         turns = self.turns_slider.value() / 2.0
@@ -224,7 +274,6 @@ class PhantomStudioProWindow(QMainWindow):
         if not file_path:
             return
 
-        # Prompt user for mesh topology choice (Quad vs Triangulated)
         mesh_types = ["Quad Mesh (Quads)", "Triangulated Mesh (Triangles)"]
         mesh_choice, ok = QInputDialog.getItem(
             self, 
@@ -247,7 +296,6 @@ class PhantomStudioProWindow(QMainWindow):
         elif "." in base_name:
             base_name = base_name.rsplit(".", 1)[0]
 
-        # --- CREATE UNIQUE UTC TIMESTAMP FOLDER ---
         utc_sec = int(time.time())
         export_folder_name = f"{base_name}_utc{utc_sec}"
         export_dir = os.path.join(parent_dir, export_folder_name)
@@ -357,7 +405,8 @@ class PhantomStudioProWindow(QMainWindow):
                 "formula": "R = 0.5 + 0.9 * sqrt(Theta / (2 * pi))",
                 "substrate": self.sub_combo.currentText(),
                 "loaded_elements_config": self.elements_config,
-                "mesh_topology": "Triangles" if is_triangulated else "Quads"
+                "mesh_topology": "Triangles" if is_triangulated else "Quads",
+                "canvas_grid_dimensions": [grid_z, grid_theta]
             }
             with open(json_path, "w") as f:
                 json.dump(metadata, f, indent=4)
@@ -425,7 +474,7 @@ class PhantomStudioProWindow(QMainWindow):
             msg_box.setText(
                 f"Phantom Studio Pro exported to unique folder:\n[{export_folder_name}]\n\n"
                 f"• {base_name}.mhd (+ .raw)\n"
-                f"• {base_name}.obj ({mesh_choice}) & .mtl\n"
+                f"• {base_name}.obj ({mesh_choice}, {grid_theta}x{grid_z}) & .mtl\n"
                 f"• {base_name}_unwrapped_texture.png (.npy)\n"
                 f"• {base_name}_elemental_zmap.npy\n"
                 f"• {base_name}_metadata.json"
