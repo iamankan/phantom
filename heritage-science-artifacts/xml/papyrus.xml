@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<java version="1.6.0_20" class="java.beans.XMLDecoder"> 
+ <object class="edu.stanford.rsl.conrad.physics.materials.Compound"> 
+  <void property="density"> 
+   <double>0.75</double> 
+  </void> 
+  <void property="formula"> 
+   <string>C6H10O5</string> 
+  </void> 
+  <void property="name"> 
+   <string>Papyrus</string> 
+  </void> 
+  <void property="weightedAtomicComposition"> 
+   <object class="edu.stanford.rsl.conrad.physics.materials.utils.WeightedAtomicComposition"> 
+    <void property="compositionTable"> 
+     <void method="put"> 
+      <string>C</string> 
+      <double>72.066</double> 
+     </void> 
+     <void method="put"> 
+      <string>H</string> 
+      <double>10.08</double> 
+     </void> 
+     <void method="put"> 
+      <string>O</string> 
+      <double>80.0</double> 
+     </void> 
+    </void> 
+   </object> 
+  </void> 
+ </object> 
+</java>
