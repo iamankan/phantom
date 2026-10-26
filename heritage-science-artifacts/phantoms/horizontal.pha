@@ -1,0 +1,12 @@
+Phantom "Horizontal_Bars_Phantom"
+
+// Flat Board Horizontal Bars Phantom using file: utils/conrad/material_horizontal.txt
+
+// Base Material: PAPYRUS | Board [Width(dx): 2.0, Depth(dy): 0.1, Height(dz): 2.0] (cm)
+
+// --- Base Substrate Board ---
+{[ Box: x=0.0; y=0.0; z=0.0; dx=2.0; dy=0.1; dz=2.0;]; formula = H20; rho = PAPYRUS; priority = 1;}
+// --- Horizontal Material Strips (Top to Bottom) ---
+{[ Box: x=0.0; y=0.0750; z=0.7500; dx=2.0000; dy=0.05; dz=0.5000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=0.0; y=0.0750; z=0.2500; dx=2.0000; dy=0.05; dz=0.5000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=0.0; y=0.0750; z=-0.2500; dx=2.0000; dy=0.05; dz=0.5000;]; formula = H20; rho = CARBON; priority = 2;}

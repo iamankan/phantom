@@ -1,0 +1,41 @@
+Phantom "Flat_Board_Charuko_Phantom"
+
+// Flat Board Charuko Phantom with Background-Separated Inks
+
+// Base Material: PAPYRUS | Board [Width(dx): 8.0, Depth(dy): 0.1, Height(dz): 8.0] (cm)
+
+// --- Base Substrate Board ---
+{[ Box: x=0.0; y=0.0; z=0.0; dx=8.0; dy=0.1; dz=8.0;]; formula = H20; rho = PAPYRUS; priority = 1;}
+// --- Isolated Ink Patches Separated by Background Substrate ---
+{[ Box: x=-3.5000; y=0.0750; z=-3.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=-1.5000; y=0.0750; z=-3.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=0.5000; y=0.0750; z=-3.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=2.5000; y=0.0750; z=-3.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=-2.5000; y=0.0750; z=-2.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=-0.5000; y=0.0750; z=-2.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=1.5000; y=0.0750; z=-2.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=3.5000; y=0.0750; z=-2.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=-3.5000; y=0.0750; z=-1.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=-1.5000; y=0.0750; z=-1.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=0.5000; y=0.0750; z=-1.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=2.5000; y=0.0750; z=-1.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=-2.5000; y=0.0750; z=-0.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=-0.5000; y=0.0750; z=-0.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=1.5000; y=0.0750; z=-0.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=3.5000; y=0.0750; z=-0.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=-3.5000; y=0.0750; z=0.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=-1.5000; y=0.0750; z=0.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=0.5000; y=0.0750; z=0.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=2.5000; y=0.0750; z=0.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=-2.5000; y=0.0750; z=1.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=-0.5000; y=0.0750; z=1.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=1.5000; y=0.0750; z=1.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=3.5000; y=0.0750; z=1.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=-3.5000; y=0.0750; z=2.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=-1.5000; y=0.0750; z=2.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=0.5000; y=0.0750; z=2.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=2.5000; y=0.0750; z=2.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=-2.5000; y=0.0750; z=3.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=-0.5000; y=0.0750; z=3.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
+{[ Box: x=1.5000; y=0.0750; z=3.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = IRONGALLINK; priority = 2;}
+{[ Box: x=3.5000; y=0.0750; z=3.5000; dx=1.0000; dy=0.05; dz=1.0000;]; formula = H20; rho = LAMPBLACKINK; priority = 2;}
